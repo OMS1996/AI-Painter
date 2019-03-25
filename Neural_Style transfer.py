@@ -1,6 +1,6 @@
-﻿"""
+"""
 Last edited on Tue Mar 19 20:32:04 2019
-@author: Morra
+@author: Omar M.Hussein
 """
 import os #The OS module in Python provides a way of using operating system dependent functionality. The functions that the OS module provides allows you to interface with the underlying operating system that Python
 import sys # System-specific parameters and functions. This module provides access to some variables used or maintained by the interpreter and to functions that interact strongly with the interpreter.
@@ -12,6 +12,7 @@ from PIL import Image # Image handling
 from nst_utils import *
 import numpy as np #numpy
 import tensorflow as tf #To create tensors and better use deeplearning
+model = load_vgg_model("pretrained-model/imagenet-vgg-verydeep-19.mat")
 
 def compute_content_cost(activation_Content, activation_Generated):
     """
@@ -30,7 +31,7 @@ def compute_content_cost(activation_Content, activation_Generated):
     """
     
     # Getting the dimensions of that specific layer which as the channels,the area = width and height
-    m, n_Height, n_Width, n_channels = a_G.get_shape().as_list()
+    m, n_Height, n_Width, n_channels = activation_Generated.get_shape().as_list()
     
     # Reshape activation_Content, activation_Generated activation layer of content and generated image
     # Unrolling convention for better calculations
@@ -60,7 +61,7 @@ def gram_matrix(unrolled_mat):
     Returns:
     Grammed : Gram matrix of A, of shape (n_channels, n_channels)
     """
-    Grammed = tf.matmul(A,tf.transpose(unrolled_mat))
+    Grammed = tf.matmul(unrolled_mat,tf.transpose(unrolled_mat))
     return Grammed
 
 def compute_layer_style_cost(activation_Style, activation_Generated):
@@ -184,17 +185,6 @@ def total_cost(J_content, J_style, alpha = 10, beta = 40):
 last edited on Tue Mar 12 2019
 @author: Omar M.Hussein
 """
-import os #The OS module in Python provides a way of using operating system dependent functionality. The functions that the OS module provides allows you to interface with the underlying operating system that Python
-import sys # System-specific parameters and functions. This module provides access to some variables used or maintained by the interpreter and to functions that interact strongly with the interpreter.
-import scipy.io #Input and output ( scipy.io ) SciPy has many modules, classes, and functions available to read data from and write data to a variety of file formats. See also. numpy-reference.routines.io (in Numpy)
-import scipy.misc # to read images
-import matplotlib.pyplot as plt #for plots
-from matplotlib.pyplot import imshow #for showing images
-from PIL import Image # Image handling
-from nst_utils import *
-import numpy as np #numpy
-import tensorflow as tf #To create tensors and better use deeplearning
-
 # Reset the graph
 tf.reset_default_graph()
 
@@ -211,6 +201,7 @@ style_image = reshape_and_normalize_image(style_image)
 
 # Initializing the generated image with Noisy Content Image
 generated_image = generate_noise_image(content_image)
+
 model = load_vgg_model("pretrained-model/imagenet-vgg-verydeep-19.mat")
 
 # Content Image Vs Generated Image Cost
@@ -237,7 +228,7 @@ J = total_cost(J_content, J_style,alpha = 10,beta = 40)
 
 #optimisation
 op = tf.train.AdamOptimizer(1.9)
-train_step = optimizer.minimize(J)
+train_step = op.minimize(J)
 
 def model_nn(sess, input_image, num_iterations = 200):
     
@@ -271,3 +262,5 @@ def model_nn(sess, input_image, num_iterations = 200):
     save_image('output/generated_image.jpg', generated_image)
     
     return generated_image
+
+model_nn(sess, generated_image)
